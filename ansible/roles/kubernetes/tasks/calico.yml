@@ -45,7 +45,7 @@
 
 - name: Check if calico pods are already deployed
   ansible.builtin.set_fact:
-    calico_pods: "{{ k8s_running_system_pods.stdout | from_json | community.general.json_query(calico_pod_query)  }}"
+    calico_pods: "{{ k8s_running_system_pods.stdout | from_json | community.general.json_query(calico_pod_query) }}"
   vars:
     calico_pod_query: "items[*].metadata.name | [?contains(@, 'calico')]"
 

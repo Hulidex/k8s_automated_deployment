@@ -93,87 +93,23 @@
     name: containerd
     enabled: true
 
-- name: Remove k8s cluster
-  when:
-    - destroy_mode
-    - kubelet_service.status.SubState == 'running'
+- name: Nerdctl
   block:
-    - name: Kubeadm reset
-      register: last_cmd_log
-      notify: Save output to log
-      ansible.builtin.command:
-        chdir: "{{ k8s_install_files_path }}"
-        cmd: kubeadm reset --force
-      changed_when: true
+    - name: Download binary from github
+      ansible.builtin.get_url:
+        url: "{{ nerdctl_url }}/releases/download/v{{ nerdctl_version }}/nerdctl-{{ nerdctl_version }}-linux-{{ sys_architecture }}.tar.gz"
+        checksum: "{{ nerdctl_checksum }}"
+        dest: /root
+        mode: '640'
+      vars:
+        nerdctl_url: "https://github.com/containerd/nerdctl"
 
-    - name: Clear containerd containers
-      block:
-        - name: Get containers ids
-          register: containers_ids
-          ansible.builtin.command:
-            cmd: ctr -n k8s.io c ls -q
-          changed_when: true
-
-        - name: Clear containers
-          when: containers_ids.stdout | length > 0
-          ansible.builtin.command:
-            cmd: "ctr -n k8s.io c rm {{ containers_ids.stdout }}"
-          changed_when: true
-
-    - name: Clear containerd images
-      block:
-        - name: Get images ids
-          register: images_ids
-          ansible.builtin.command:
-            cmd: ctr -n k8s.io i ls -q
-          changed_when: true
-
-        - name: Clear images
-          ansible.builtin.command:
-            cmd: "ctr -n k8s.io i rm {{ images_ids.stdout }}"
-          changed_when: true
-
-    - name: Clear iptables
-      block:
-        - name: Flush chain
-          changed_when: true
-          ansible.builtin.command:
-            cmd: iptables -F
-
-        - name: Delete chain
-          changed_when: true
-          ansible.builtin.command:
-            cmd: iptables -X
-
-        - name: Flush chain in specific tables
-          changed_when: true
-          ansible.builtin.command:
-            cmd: iptables -t {{ item }} -F
-          with_items:
-            - nat
-            - raw
-            - mangle
-
-        - name: Delete chain in specific tables
-          changed_when: true
-          ansible.builtin.command:
-            cmd: iptables -t {{ item }} -X
-          with_items:
-            - nat
-            - raw
-            - mangle
-
-    - name: Remove k8s folders
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - /etc/cni/net.d
-        - ~/.kube/config
-        - /etc/kubernetes
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
+    - name: Extract
+      ansible.builtin.unarchive:
+        src: "/root/nerdctl-{{ nerdctl_version }}-linux-{{ sys_architecture }}.tar.gz"
+        dest: /usr/local/bin
+        mode: '655'
+        remote_src: true
 
 - name: Reboot
   when: destroy_mode

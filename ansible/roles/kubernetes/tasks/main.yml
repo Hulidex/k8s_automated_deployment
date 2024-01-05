@@ -1,17 +1,4 @@
 ---
-- name: Include base tasks
-  ansible.builtin.include_tasks:
-    file: "{{ task }}"
-  loop: "{{ all_tasks if not destroy_mode else all_tasks | list | reverse }}"
-  loop_control:
-    loop_var: task
-  vars:
-    all_tasks: [
-      'k8s_prerequisites.yml',
-      'containerd.yml',
-      'k8s_apt_repository.yml'
-    ]
-
 - name: Include control plane tasks
   when: "'control_main_node' in group_names"
   ansible.builtin.include_tasks:
@@ -21,6 +8,9 @@
     loop_var: task
   vars:
     cp_tasks: [
+      'k8s_prerequisites.yml',
+      'containerd.yml',
+      'k8s_apt_repository.yml',
       'k8s_packages.yml',
       "{{ 'k8s_bootstrap_adm.yml' if not destroy_mode else 'k8s_remove_adm.yml' }}",
       'calico.yml',
@@ -36,6 +26,9 @@
     loop_var: task
   vars:
     wk_tasks: [
+      'k8s_prerequisites.yml',
+      'containerd.yml',
+      'k8s_apt_repository.yml',
       'k8s_packages.yml',
       "{{ 'k8s_join_adm.yml' if not destroy_mode else 'k8s_remove_adm.yml' }}"
     ]

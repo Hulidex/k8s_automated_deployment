@@ -14,7 +14,6 @@
         - Save output to log
         - Reboot
       ansible.builtin.command:
-        chdir: "{{ k8s_install_files_path }}"
         cmd: kubeadm reset --force
       changed_when: true
 
@@ -79,6 +78,7 @@
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent
+      ignore_errors: true
       loop:
         - /etc/cni/net.d
         - ~/.kube/config

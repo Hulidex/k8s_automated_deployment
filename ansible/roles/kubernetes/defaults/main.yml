@@ -8,6 +8,11 @@ k8s_address_range: "193.10.0.0/16"
 # Optional configuration
 destroy_mode: false
 
+# The version and the checksum can be updated here
+# https://github.com/containerd/nerdctl/releases
+nerdctl_version: "1.7.2"
+nerdctl_checksum: "sha256:aed7d33d645bfb97c8df978d952a1e1f7e02b0b3ed2c0089ee4285af7f8f971b"
+
 k8s_packages:
   - kubectl
   - kubeadm

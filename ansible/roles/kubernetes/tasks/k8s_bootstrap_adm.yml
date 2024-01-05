@@ -7,6 +7,12 @@
       ansible.builtin.command:
         cmd: kubeadm config print init-defaults
 
+    - name: Create folder
+      ansible.builtin.file:
+        path: "{{ k8s_install_files_path }}"
+        state: directory
+        mode: "0644"
+
     - name: Save config into file
       ansible.builtin.copy:
         dest: "{{ k8s_install_files_path }}/cluster_config.yaml"
