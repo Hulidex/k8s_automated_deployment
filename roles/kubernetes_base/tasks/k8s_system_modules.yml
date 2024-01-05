@@ -1,0 +1,18 @@
+- name: Configure kernel modules to run on boot
+  loop: "{{ sys_kernel_modules }}"
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+    persistent: present
+
+- name: Add k8s network config
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "1"
+    sysctl_set: true
+    reload: true
+    state: present
+  loop:
+    - net.bridge.bridge-nf-call-iptables
+    - net.bridge.bridge-nf-call-ip6tables
+    - net.ipv4.ip_forward

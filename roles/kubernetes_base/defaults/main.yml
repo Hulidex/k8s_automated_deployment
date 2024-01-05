@@ -1,0 +1,7 @@
+destroy_mode: false
+docker_gpg_url: "https://download.docker.com/linux/ubuntu/gpg"
+docker_gpg_path: '/etc/apt/keyrings/docker.asc'
+docker_repo_url: "https://download.docker.com/linux/ubuntu"
+sys_kernel_modules:
+  - overlay
+  - br_netfilter

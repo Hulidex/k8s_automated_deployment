@@ -1,5 +1,5 @@
-- name: Ansible run
+- name: Kubernetes base
   hosts: all
-  tasks:
-    - name: Show hostname
-      ansible.builtin.ping:
+  become: true
+  roles:
+    - role: kubernetes_base
