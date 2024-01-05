@@ -1,0 +1,7 @@
+host_user_name: "k"
+proxy_node: 'kubenode0'
+host_password: "{{ vault_host_password }}"
+
+# To list the last 20 versions of k8s
+# apt-cache policy kubelet | head -n 20
+k8s_version: "1.28.2-00"

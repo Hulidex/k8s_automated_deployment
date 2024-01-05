@@ -1,0 +1,58 @@
+---
+- name: Create folder for k8s installation files
+  ansible.builtin.file:
+    path: "{{ k8s_install_files_path }}"
+    state: "{{ 'absent' if destroy_mode else 'directory' }}"
+    mode: '0644'
+
+- name: Download and configure calico
+  when: not destroy_mode
+  block:
+    - name: Download conf
+      ansible.builtin.get_url:
+        url: "{{ calico_conf_url }}"
+        dest: "{{ k8s_install_files_path }}/calico_raw.yaml"
+        mode: '0644'
+        force: false
+
+    - name: Copy conf
+      ansible.builtin.copy:
+        src: "{{ k8s_install_files_path }}/calico_raw.yaml"
+        dest: "{{ k8s_install_files_path }}/calico.yaml"
+        mode: '0644'
+        remote_src: true
+        force: false
+
+    - name: Set fact calico ipv4pool
+      ansible.builtin.set_fact:
+        calico_ipv4pool_cidr: |
+          - name: CALICO_IPV4POOL_CIDR
+            value: "{{ k8s_address_range }}"
+
+    - name: Set k8s custom address range
+      ansible.builtin.blockinfile:
+        path: "{{ k8s_install_files_path }}/calico.yaml"
+        insertbefore: '^\s+#\s+-\s+name:\sCALICO_IPV4POOL_CIDR'
+        block: "{{ calico_ipv4pool_cidr | indent(width=12, first=True) }}"
+
+- name: Get all running system pods
+  changed_when: false # this command doesn't change the system
+  register: k8s_running_system_pods
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  ansible.builtin.command:
+    cmd: "kubectl -n kube-system get pods --field-selector status.phase=Running -o json"
+
+- name: Check if calico pods are already deployed
+  ansible.builtin.set_fact:
+    calico_pods: "{{ k8s_running_system_pods.stdout | from_json | community.general.json_query(calico_pod_query) }}"
+  vars:
+    calico_pod_query: "items[*].metadata.name | [?contains(@, 'calico')]"
+
+- name: Create calico network pods
+  when: calico_pods | length == 0
+  changed_when: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  ansible.builtin.command:
+    cmd: "kubectl apply -f '{{ k8s_install_files_path }}/calico.yaml'"

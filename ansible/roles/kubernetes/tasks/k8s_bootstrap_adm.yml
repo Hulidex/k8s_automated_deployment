@@ -1,0 +1,83 @@
+---
+- name: Generate default k8s config
+  block:
+    - name: Generate kubeadm config
+      register: kubeadm_def_conf
+      changed_when: false
+      ansible.builtin.command:
+        cmd: kubeadm config print init-defaults
+
+    - name: Create folder
+      ansible.builtin.file:
+        path: "{{ k8s_install_files_path }}"
+        state: directory
+        mode: "0644"
+
+    - name: Save config into file
+      ansible.builtin.copy:
+        dest: "{{ k8s_install_files_path }}/cluster_config.yaml"
+        content: "{{ kubeadm_def_conf.stdout }}"
+        force: false
+        mode: "0644"
+
+    - name: Set custom config
+      ansible.builtin.lineinfile:
+        path: "{{ k8s_install_files_path }}/cluster_config.yaml"
+        regexp: "{{ item.regex }}"
+        backrefs: true
+        line: "{{ item.line }}"
+      loop:
+        - { regex: '^(\s*advertiseAddress\s*:)', line: '\1 {{ control_node_ip_address }}' }
+        - { regex: '^(\s*kubernetesVersion\s*:)', line: "\\1 {{ k8s_version | regex_replace('^(\\d\\.\\d+\\.\\d+).*', '\\1') }}" }
+
+    - name: Add KubeletConfiguration yaml object
+      ansible.builtin.blockinfile:
+        path: "{{ k8s_install_files_path }}/cluster_config.yaml"
+        block: |
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: KubeletCofiguration
+          cgroupDriver: systemd
+
+- name: Get kubelet status
+  ansible.builtin.systemd:
+    name: kubelet
+  register: kubelet_service
+
+- name: Bootstrap k8s cluster with kubeadm
+  register: last_cmd_log
+  notify:
+    - Save output to log
+    - Reboot
+  changed_when: true
+  when:
+    - kubelet_service.status.SubState != 'running'
+  ansible.builtin.command:
+    chdir: "{{ k8s_install_files_path }}"
+    cmd: >
+      kubeadm init --config '{{ k8s_install_files_path }}/cluster_config.yaml'
+        --node-name '{{ ansible_facts['nodename'] }}'
+
+- name: Configure regular user
+  vars:
+    regular_user_path: "/home/{{ host_user_name }}"
+  block:
+    - name: Create k8s local directory
+      ansible.builtin.file:
+        path: "{{ regular_user_path }}/.kube"
+        owner: "{{ host_user_name }}"
+        group: "{{ host_user_name }}"
+        mode: '740'
+        state: directory
+
+    - name: Copy general config to local
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "{{ regular_user_path }}/.kube/config"
+        owner: "{{ host_user_name }}"
+        group: "{{ host_user_name }}"
+        remote_src: true
+        mode: '640'
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

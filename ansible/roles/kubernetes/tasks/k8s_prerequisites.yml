@@ -1,0 +1,67 @@
+---
+- name: Determine system architecture
+  register: sys_architecture
+  ansible.builtin.command:
+    cmd: "dpkg --print-architecture"
+  changed_when: sys_architecture.rc != 0
+
+- name: Set k8s facts pre installation
+  ansible.builtin.set_fact:
+    sys_architecture: "{{ sys_architecture.stdout }}"
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+
+- name: Configure kernel modules to run on boot
+  loop: "{{ sys_kernel_modules }}"
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+    persistent: present
+
+- name: Add k8s network config
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "1"
+    sysctl_set: true
+    reload: true
+    state: present
+  loop:
+    - net.bridge.bridge-nf-call-iptables
+    - net.bridge.bridge-nf-call-ip6tables
+    - net.ipv4.ip_forward
+
+- name: Disable swap on boot
+  when: not destroy_mode
+  notify: Disable swap
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^[#\s]*(.*?swap\s*?sw.*)$'
+    replace: '# \1'
+
+- name: Enable swap on boot
+  when: destroy_mode
+  notify: Enable swap
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^[#\s]*(.*?swap\s*?sw.*)$'
+    replace: '\1'
+
+- name: Download k8s GPG key
+  ansible.builtin.get_url:
+    url: "{{ k8s_gpg_url }}"
+    dest: "{{ k8s_gpg_path }}"
+    mode: '0644'
+    force: true
+
+- name: Add k8s Official apt repository
+  ansible.builtin.apt_repository:
+    filename: k8s
+    repo: "deb [arch={{ sys_architecture }} signed-by={{ k8s_gpg_path }}] {{ k8s_repo_url }} {{ k8s_distribution_release }} main"
+    mode: '0644'
+    state: "{{ 'absent' if destroy_mode else 'present' }}"

@@ -1,0 +1,7 @@
+---
+- name: Kubernetes
+  hosts: all
+  force_handlers: true
+  become: true
+  roles:
+    - role: kubernetes

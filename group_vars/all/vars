@@ -1,3 +1,0 @@
-host_user_name: "k"
-proxy_node: 'kubenode0'
-host_password: "{{ vault_host_password }}"

@@ -1,0 +1,13 @@
+---
+- name: Create join token for adding other nodes
+  when: not destroy_mode
+  block:
+    - name: Token create command
+      changed_when: true
+      register: join_command
+      ansible.builtin.command:
+        cmd: kubeadm token create --ttl 15m --print-join-command
+
+    - name: Set fact join command
+      ansible.builtin.set_fact:
+        join_command: "{{ join_command.stdout }}"

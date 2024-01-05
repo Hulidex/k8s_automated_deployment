@@ -1,5 +1,0 @@
-- name: Ansible run
-  hosts: all
-  tasks:
-    - name: Show hostname
-      ansible.builtin.ping:

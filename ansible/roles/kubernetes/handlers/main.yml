@@ -1,0 +1,23 @@
+---
+- name: Save output to log
+  ansible.builtin.include_tasks:
+    file: create_log.yml
+
+- name: Reboot
+  ansible.builtin.reboot:
+    reboot_timeout: 3600
+
+- name: Restart containerd service
+  ansible.builtin.systemd:
+    name: containerd
+    state: restarted
+
+- name: Disable swap
+  changed_when: true
+  ansible.builtin.command:
+    cmd: swapoff -a
+
+- name: Enable swap
+  changed_when: true
+  ansible.builtin.command:
+    cmd: swapon -a
