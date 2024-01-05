@@ -1,0 +1,46 @@
+######### SPECIFIC CONFIGURATION ######################################
+# This block only serves in a very specific condition:
+# I only configured one node (kubenode0) to be the only one that's
+# accessible from the outside of the kubernetes cluster.
+#
+# I can't access kubenode1 o3 kubenode2 from my host machine.
+# BUT I can access those nodes from kubenode0, therefore I instruct ssh to use
+# kubenode0 as proxy
+#
+# Feel free to remove all this block if you don't have such configuration
+# and you can access all your nodes from your host machine.
+# BTW: this configuration is called 'SSH JUMP HOST'
+# 
+
+# Group for the proxy server
+proxy_server:
+  hosts:
+    kubenode0:
+      ansible_host: "{{ proxy_node }}"
+
+# Group for the rest of the nodes that are accessible from the proxy
+proxied_servers:
+  hosts:
+    kubenode1:
+    kubenode2:
+  vars:
+    ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q {{ proxy_user }}@{{ proxy_node }}"'
+#########################################################################
+
+all:
+  children:
+    control_nodes:
+      hosts:
+        kubenode0:
+
+    worker_nodes:
+      hosts:
+        kubenode1:
+        kubenode2:
+
+  vars:
+    # I assume that all nodes have the same user and password configured and that the user
+    # password is also valid as the root password
+    ansible_user: "{{ host_user_name }}"
+    ansible_password: "{{  host_password }}"
+    ansible_become_password: "{{  host_password }}"
