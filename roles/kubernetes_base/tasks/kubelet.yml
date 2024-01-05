@@ -1,0 +1,18 @@
+---
+- name: Install kubelet
+  ansible.builtin.apt:
+    name:
+      - "kubelet={{ k8s_version }}"
+    state: "{{ 'absent' if destroy_mode else 'present' }}"
+
+# This will prevent the system to update kubeadm when
+# apt-get upgrade is performed in the system
+- name: Hold kubelet
+  ansible.builtin.dpkg_selections:
+    name: kubelet
+    selection: hold
+
+- name: Enable kubelet service
+  ansible.builtin.systemd:
+    name: kubelet 
+    enabled: true

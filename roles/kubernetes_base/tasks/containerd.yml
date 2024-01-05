@@ -30,7 +30,7 @@
     mode: '0644'
     force: true
 
-- name: Add docker Official GPG key
+- name: Add docker Official apt repository
   ansible.builtin.apt_repository:
     filename: docker
     repo: "deb [arch={{ sys_architecture }} signed-by={{ docker_gpg_path }}] {{ docker_repo_url }} {{ ansible_distribution_release }} stable"
@@ -67,6 +67,12 @@
         content: "{{ containerd_def_config.stdout }}"
         mode: '0644'
 
+# This modification is required to enable full support for systemd cgroup
+# management. Without this option, Kubernetes system containers will
+# periodically restart themselves.
+# sources:
+# cgroups - https://man7.org/linux/man-pages/man7/cgroups.7.html
+# issue - https://github.com/kubernetes/kubernetes/issues/110177#issuecomment-1161647736
 - name: "Set 'SystemdCgroup' option to value 'true'"
   when: not destroy_mode
   register: containerd_set_config
@@ -76,3 +82,8 @@
     path: /etc/containerd/config.toml
     regexp: '^\s*SystemdCgroup\s*='
     line: '            SystemdCgroup = true'
+
+- name: Enable containerd service
+  ansible.builtin.systemd:
+    name: containerd
+    enabled: true

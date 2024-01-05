@@ -1,0 +1,13 @@
+---
+- name: Install kubeadm
+  ansible.builtin.apt:
+    name:
+      - "kubeadm={{ k8s_version }}"
+    state: "{{ 'absent' if destroy_mode else 'present' }}"
+
+# This will prevent the system to update kubeadm when
+# apt-get upgrade is performed in the system
+- name: Hold kubeadm
+  ansible.builtin.dpkg_selections:
+    name: kubeadm
+    selection: hold

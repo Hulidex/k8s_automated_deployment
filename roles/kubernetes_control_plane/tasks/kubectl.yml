@@ -1,0 +1,17 @@
+---
+# This package is optional, it serves to instruct the API Server commands
+# but it can be installed in any host capable of reach the k8s cluster
+# it could be your personal computer
+# I will install it on the control nodes for having an extra point
+- name: Install kubectl
+  ansible.builtin.apt:
+    name:
+      - "kubectl={{ k8s_version }}"
+    state: "{{ 'absent' if destroy_mode else 'present' }}"
+
+# This will prevent the system to update kubeadm when
+# apt-get upgrade is performed in the system
+- name: Hold kubectl
+  ansible.builtin.dpkg_selections:
+    name: kubectl
+    selection: hold
