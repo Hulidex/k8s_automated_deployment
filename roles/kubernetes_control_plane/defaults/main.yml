@@ -1,2 +1,8 @@
 ---
 destroy_mode: false
+k8s_packages:
+  # This package is optional, it serves to instruct the API Server commands
+  # but it can be installed in any host capable of reach the k8s cluster
+  # it could be your personal computer
+  # I will install it on the control nodes for having an extra point
+  - kubectl

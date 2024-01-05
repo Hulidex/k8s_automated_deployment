@@ -1,0 +1,32 @@
+---
+- name: Install base packages
+  when: not destroy_mode
+  block:
+    - name: Install specific version
+      loop: "{{ k8s_packages }}"
+      ansible.builtin.apt:
+        name: "{{ item }}={{ k8s_version }}"
+        state: present
+
+    # This will prevent the system to update kubeadm when
+    # apt-get upgrade is performed in the system
+    - name: Hold package
+      loop: "{{ k8s_packages }}"
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+
+- name: Remove base packages
+  when: destroy_mode
+  block:
+    - name: Unhold package
+      loop: "{{ k8s_packages }}"
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: install
+
+    - name: Remove specific version
+      loop: "{{ k8s_packages }}"
+      ansible.builtin.apt:
+        name: "{{ item }}={{ k8s_version }}"
+        state: absent

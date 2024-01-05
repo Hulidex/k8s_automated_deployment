@@ -84,6 +84,7 @@
     line: '            SystemdCgroup = true'
 
 - name: Enable containerd service
+  when: not destroy_mode
   ansible.builtin.systemd:
     name: containerd
     enabled: true

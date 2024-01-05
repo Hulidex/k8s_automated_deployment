@@ -1,5 +1,4 @@
-- include_tasks: k8s_system_modules.yml
+- include_tasks: k8s_prerequisites.yml
 - include_tasks: containerd.yml
 - include_tasks: k8s_apt_repository.yml
-- include_tasks: kubeadm.yml
-- include_tasks: kubelet.yml
+- include_tasks: k8s_packages.yml

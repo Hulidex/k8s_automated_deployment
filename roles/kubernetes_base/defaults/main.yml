@@ -12,3 +12,6 @@ k8s_gpg_url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
 k8s_gpg_path: "/etc/apt/keyrings/kubernetes-archive-keyring.asc"
 k8s_repo_url: "https://apt.kubernetes.io"
 k8s_distribution_release: "kubernetes-xenial"
+k8s_packages:
+  - kubeadm
+  - kubelet

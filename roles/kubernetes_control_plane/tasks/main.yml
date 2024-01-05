@@ -1,2 +1,2 @@
 ---
-- include_tasks: kubectl.yml
+- include_tasks: k8s_packages.yml

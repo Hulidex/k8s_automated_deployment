@@ -4,3 +4,10 @@
     name: containerd
     state: restarted
 
+- name: Disable swap
+  ansible.builtin.command:
+    cmd: swapoff -a
+
+- name: Enable swap
+  ansible.builtin.command:
+    cmd: swapon -a
