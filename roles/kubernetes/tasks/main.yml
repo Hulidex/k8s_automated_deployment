@@ -1,0 +1,41 @@
+---
+- name: Include base tasks
+  ansible.builtin.include_tasks:
+    file: "{{ task }}"
+  loop: "{{ all_tasks if not destroy_mode else all_tasks | list | reverse }}"
+  loop_control:
+    loop_var: task
+  vars:
+    all_tasks: [
+      'k8s_prerequisites.yml',
+      'containerd.yml',
+      'k8s_apt_repository.yml'
+    ]
+
+- name: Include control plane tasks
+  when: "'control_main_node' in group_names"
+  ansible.builtin.include_tasks:
+    file: "{{ task }}"
+  loop: "{{ cp_tasks if not destroy_mode else cp_tasks | list | reverse }}"
+  loop_control:
+    loop_var: task
+  vars:
+    cp_tasks: [
+      'k8s_packages.yml',
+      "{{ 'k8s_bootstrap_adm.yml' if not destroy_mode else 'k8s_remove_adm.yml' }}",
+      'calico.yml',
+      'k8s_create_token.yml'
+    ]
+
+- name: Include worker nodes tasks
+  when: "'worker_nodes' in group_names"
+  ansible.builtin.include_tasks:
+    file: "{{ task }}"
+  loop: "{{ wk_tasks if not destroy_mode else wk_tasks | list | reverse }}"
+  loop_control:
+    loop_var: task
+  vars:
+    wk_tasks: [
+      'k8s_packages.yml',
+      "{{ 'k8s_join_adm.yml' if not destroy_mode else 'k8s_remove_adm.yml' }}"
+    ]

@@ -1,0 +1,36 @@
+---
+###############################################################################
+# Change this depending on your virtual machine configuration
+control_node_ip_address: "192.168.100.4"
+k8s_address_range: "193.10.0.0/16"
+
+###############################################################################
+# Optional configuration
+destroy_mode: false
+
+k8s_packages:
+  - kubectl
+  - kubeadm
+  - kubelet
+
+calico_conf_url: "https://raw.githubusercontent.com/projectcalico/calico/master/manifests/calico.yaml"
+
+k8s_install_files_path: "/root/k8s_install_files"
+
+sys_kernel_modules:
+  - overlay
+  - br_netfilter
+
+docker_gpg_url: "https://download.docker.com/linux/ubuntu/gpg"
+
+docker_gpg_path: "/etc/apt/keyrings/docker.asc"
+
+docker_repo_url: "https://download.docker.com/linux/ubuntu"
+
+k8s_gpg_url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+
+k8s_gpg_path: "/etc/apt/keyrings/kubernetes-archive-keyring.asc"
+
+k8s_repo_url: "https://apt.kubernetes.io"
+
+k8s_distribution_release: "kubernetes-xenial"

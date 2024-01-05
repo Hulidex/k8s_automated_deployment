@@ -1,0 +1,23 @@
+---
+- name: Get kubelet status
+  ansible.builtin.systemd:
+    name: kubelet
+  register: kubelet_service
+
+- name: Set fact
+  ansible.builtin.set_fact:
+    main_control_node: "{{ groups['control_main_node'][0] }}"
+
+- name: Join to k8s cluster
+  when:
+    - not destroy_mode
+    - kubelet_service.status.SubState != 'running'
+  changed_when: true
+  register: last_cmd_log
+  notify:
+    - Save output to log
+  ansible.builtin.command:
+    cmd: "{{ hostvars[main_control_node]['join_command'] }}"
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

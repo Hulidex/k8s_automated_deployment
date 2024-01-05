@@ -1,3 +1,0 @@
-- include_tasks: k8s_prerequisites.yml
-- include_tasks: containerd.yml
-- include_tasks: k8s_apt_repository.yml

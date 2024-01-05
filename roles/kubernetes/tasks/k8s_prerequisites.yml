@@ -9,6 +9,14 @@
   ansible.builtin.set_fact:
     sys_architecture: "{{ sys_architecture.stdout }}"
 
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+
 - name: Configure kernel modules to run on boot
   loop: "{{ sys_kernel_modules }}"
   community.general.modprobe:

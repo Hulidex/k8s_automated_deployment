@@ -1,8 +1,0 @@
----
-- name: Save output to log
-  ansible.builtin.include_tasks:
-    file: create_log.yml
-
-- name: Reboot
-  ansible.builtin.reboot:
-    reboot_timeout: 3600

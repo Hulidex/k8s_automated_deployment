@@ -3,7 +3,7 @@
   block:
     - name: Generate kubeadm config
       register: kubeadm_def_conf
-      changed_when: false 
+      changed_when: false
       ansible.builtin.command:
         cmd: kubeadm config print init-defaults
 
