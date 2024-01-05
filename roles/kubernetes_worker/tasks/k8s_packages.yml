@@ -1,5 +1,5 @@
 ---
-- name: Install base packages
+- name: Install control plane packages
   when: not destroy_mode
   block:
     - name: Install specific version
@@ -16,7 +16,7 @@
         name: "{{ item }}"
         selection: hold
 
-- name: Remove base packages
+- name: Remove control plane packages
   when: destroy_mode
   block:
     - name: Unhold package

@@ -1,2 +1,6 @@
 ---
 destroy_mode: false
+
+k8s_packages:
+  - kubeadm
+  - kubelet

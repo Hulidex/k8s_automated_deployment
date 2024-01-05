@@ -30,3 +30,4 @@
       ansible.builtin.apt:
         name: "{{ item }}={{ k8s_version }}"
         state: absent
+        purge: true

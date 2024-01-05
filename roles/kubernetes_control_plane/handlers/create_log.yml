@@ -1,0 +1,14 @@
+---
+- name: Save output to log
+  block:
+    - name: Create log 'directory'
+      ansible.builtin.file:
+        path: /var/log/ansible
+        state: directory
+        mode: '0644'
+
+    - name: "Create log file from variable 'last_cmd_log'"
+      ansible.builtin.copy:
+        dest: "/var/log/ansible/{{ ansible_date_time.iso8601_basic }}.log"
+        content: "{{ last_cmd_log.stdout }}"
+        mode: '0644'

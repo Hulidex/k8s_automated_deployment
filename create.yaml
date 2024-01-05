@@ -1,0 +1,15 @@
+---
+- name: Kubernetes control plane nodes
+  hosts: control_nodes
+  force_handlers: true
+  become: true
+  roles:
+    - role: kubernetes_base
+    - role: kubernetes_control_plane
+
+# - name: Kubernetes worker nodes
+#   hosts: worker_nodes
+#   become: true
+#   roles:
+#     - role: kubernetes_base
+#     - role: kubernetes_worker
