@@ -6,7 +6,7 @@ DIY guide for Learning kubernetes (k8s):
 - basic fundamentals
 - Learning by automating all the installation and configuration process with ansible.
 
-I encourage to do it yourself: You shoudl try to install a k8s cluster with 
+I encourage to do it yourself: You should try to install a k8s cluster with 
 containerd, kubeadm and calico using an external tutorial, 
 then try to automate the process
 and use the sources present on this repository as a back up.
@@ -59,7 +59,7 @@ They are single or a collection of containers **deployed as a single unit**.
 - Ephemeral - no pod can be 'redeployed', the are either created or destroyed.
 - Atomicity - They are in the cluster or not. If only one container in the pod dies, the pod will be unavailable.
 
-How can k8s knows if a container if ok? Well, easy, monitoring the pod state... 
+How can k8s knows if a container if OK? Well, easy, monitoring the pod state... 
 But what if the application running in my pod requires a more complex health 
 check, How can I make k8s aware of that custom situation? With 'probes'. We can 
 configure probes for our pods to check their health.
@@ -151,7 +151,7 @@ on a specific node in the k8s cluster.
 
 #### Controller manager
 
-- Has the job of implementing the lifecycle functions of the controllers that
+- Has the job of implementing the life cycle functions of the controllers that
 execute and monitor the state of the k8s objects such us pods. 
 - They keep things in the desired state.
 - They watch the API server and update it if required to ensure that its heading towards the desired state.
@@ -166,8 +166,8 @@ in the control plane node. So you might think that kubelet is only required
 in worker nodes, something that is completely false.
 
 Kubelet is a system daemon or service, in this guide the utility kubeadm
-install it as a systemd service in linux, this service deals with the container runtime,
-and **many of the k8s components like etc, the controller manager, the api server... are containers NOT OS SERVICES**.
+install it as a systemd service in Linux, this service deals with the container runtime,
+and **many of the k8s components like etcd, the controller manager, the API server are containers NOT OS SERVICES**.
 Thus, kubelet and a container runtime is required and are fundamental pieces in 
 all the k8s cluster nodes.
 
@@ -196,7 +196,7 @@ In a nutshell each worker node in a cluster contributes to the compute capacity 
 dealing with the container runtime
 - It communicates directly with the API server in the control plane node
 - Monitors API server for changes
-- Responsible for pod lifecycle
+- Responsible for pod life cycle
 - Reports Node & Pod state
 - It's responsible for running the pod probes
 
@@ -224,7 +224,7 @@ Special-purpose Pods, are pods that might be optional but they are
 extensively common in a k8s cluster.
 
 > We must be aware of that we can install additional pods for shaping the k8s
-cluster behavior or extend their functionality
+cluster behaviour or extend their functionality
 
 ##### DNS
 
@@ -245,7 +245,7 @@ Pods that provides and interface for web-based administration of a k8s cluster
 1. Using kubectl we **submit code** to instruct k8s to create a **deployment**. In that deployment we've defined that we want 3 replicas of our pod.
 2. That request is going to be submitted to the **API server**.
 3. The API server **stores the information** of the objects in **etcd**.
-4. The **controller manager**, which is monitoring the api server, discover that
+4. The **controller manager**, which is monitoring the API server, discover that
 the state has changed and it's responsible for **spin up** those 3 requested replicas creating
 a new CONTROLLER resource like a **replica set**.
 5. The scheduler is also monitoring the API server, when the controller resource is created, he will notice that the replicas are not yet scheduled. Therefore, it will tell the API Server that the pods need to be scheduled on nodes selected by him.
@@ -320,20 +320,20 @@ As this project is for learning purposes the vault pass is ```1234```
 If you want to deploy the cluster using my automation the following requisites are mandatory:
 
 - 2-4 machines shipped with Ubuntu 22.04 and able to communicate with each other
-    - The same username and password are configured for ssh into all the nodes.
-    - ssh is configured to accept authentication using username and password
+    - The same username and password are configured for SSH into all the nodes.
+    - SSH is configured to accept authentication using username and password
 - Machines should be accessible from the host that is running ansible. Alternatively, 
 you can configure a bastion set up, which consist on configure only one machine to be accessible
 from the host that is running ansible, and we use that machine as proxy to connect to the rest of
 them.
-- Python3 and pip with venv installed on the host machine where ansible will run.
+- Python 3 and pip with venv installed on the host machine where ansible will run.
 
 ## Operations
 
 > NOTE: You will need to modify the ansible inventory (```inventory.yaml```) to adjust to your machine
 hostnames.
 
-### On the host, create python3 virtual environment and install required dependencies
+### On the host, create python 3 virtual environment and install required dependencies
 
 ```bash
 # vars, change these values according to your computer
