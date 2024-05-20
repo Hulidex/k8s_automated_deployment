@@ -27,8 +27,8 @@ platform.
 
 1. We write deployment code to specify the ```desired state``` of the cluster. K8s will be responsible for read that code and perform the magic.
 2. The magic is performed thanks to ```controllers``` (also called controller loops)
-that are constantly monitoring the system to make sure that the system is in that
-desired state and modifying the system if required.
+that are constantly monitoring the system to make sure that the it is in that
+desired state, making any modification if required.
 3. And the magic can occur because of the ```k8s API``` (also know as The API
 Server) which is the glue between everything, we deploy our desired state using
 the API. The different parts of the system communicates with each other 
@@ -41,17 +41,22 @@ representing the system state.
 
 API Objects are a collection of primitives to represent the system state. e.g: pods, nodes...
 
-Thanks to this objects we cant configure the state and we can indicate that state
-either declaratively (creating a file where we will declare the different
+Thanks to this objects we cant configure the state either declaratively (creating a file where we will declare the different
 objects and deploy them afterwards) or imperatively (using cli commands
 directly).
 
 > The API server has a RESTful API that runs over HTTP using JSON, and it's what
 we use as administrators to interact with k8s.
 
+> [!NOTE]
+> We don't normally interact with the API ourselves directly. We generally use 
+> CLI or GUI tools for interacting with the cluster. These tools do the ugly work
+> of dealing with the API, and in return they offer a more user-friendly
+> environment to us.
+
 ### Pods
 
-They are single or a collection of containers **deployed as a single unit**.
+They are a single or a collection of containers **deployed as a single unit**.
 
 - Can be composed for one or more containers
 - Basic unit of work
@@ -59,12 +64,13 @@ They are single or a collection of containers **deployed as a single unit**.
 - Ephemeral - no pod can be 'redeployed', the are either created or destroyed.
 - Atomicity - They are in the cluster or not. If only one container in the pod dies, the pod will be unavailable.
 
-How can k8s knows if a container if OK? Well, easy, monitoring the pod state... 
-But what if the application running in my pod requires a more complex health 
-check, How can I make k8s aware of that custom situation? With 'probes'. We can 
-configure probes for our pods to check their health.
+> [!TIP] How can k8s knows if a container if OK? Well, easy, monitoring the pod state... 
+> But what if the application running in my pod requires a more complex health 
+> check, How can I make k8s aware of that custom situation? With 'probes'. We can 
+> configure probes for our pods to check their health.
 
-> by single unit we meant that if we create a pod with multiple containers, all the 
+> [!NOTE]
+> By single unit we meant that if we create a pod with multiple containers, all the 
 containers will be managed together: creation, deletion...
 
 ### Controllers
@@ -84,9 +90,10 @@ create a replicaset for a pod where we specify that we require 3 replicas
 of the pod in different nodes of the cluster, is the replicaset's job to
 creates, removes and distribute the pod in order to met the desired state.
 
-BUT we need to notice something, we don't usually create replicaset objects
-directly, we use an intermediate controller object that offer a higher layer
-of abstraction called Deployment.
+> [!WARNING]
+> We don't usually create replicaset objects
+> directly. We use an intermediate controller object that offer a higher layer
+> of abstraction called `Deployment`.
 
 #### Deployment
 
@@ -96,7 +103,7 @@ Is a controller object used for creating replicaset objects, they monitor the st
 
 Provides a **persistent access** to the containers on our pods.
 
-If we have a pod with a container where an application is running, and that pod is replicated in different nodes of the cluster. How can we access that application? Should we specify the node where the application run? What happen if a pod in a node crashes?. Services are responsible for offering an endpoint for the application and deal with all those questions and more.
+If we have a pod with a container where an application is running, and that pod is replicated in different nodes of the cluster. How can we access that application? Should we specify the node where the application run? What happen if a pod in a node crashes?. Services are responsible for offering an endpoint for the application and deal with all those issuesand more.
 
 - Adds persistency to the ephemeral world of pods.
 - It's the networking abstraction for Pod access.
@@ -131,8 +138,10 @@ It's comprised of several components:
 Normally, instead of communicating with k8s using the RESTful API, we can use
 command line interfaces (cli) like ```kubectl``` (there are many others). To interact with the k8s cluster.
 
-**IT'S NOT PART OF THE CONTROL PLANE**, but it's worth mentioning. This tools are
-abstractions capable of making the k8s API calls for us.
+> [!WARNING]
+> kubectl **IT'S NOT PART OF THE CONTROL PLANE**, but it's worth mentioning. Is a tool 
+> created for making your life easier, you type commands with kubectl and in turn he translate them
+> to API calls to the API server.
 
 #### etcd
 
@@ -144,7 +153,7 @@ abstractions capable of making the k8s API calls for us.
 #### scheduler
 
 - Tells k8s which nodes to start pods on, monitoring the API server for unscheduled pods.
-- For making the scheduling possible, it will evaluate pod resources in terms of things like CPU 
+- For making the scheduling possible, it will evaluate pod resources in terms of things like CPU
 memory, storage requirements to ensure their availability when placing a Pod
 on a specific node in the k8s cluster.
 - It respect any restriction or constraint defined administratively, things like keeping two pods on the same node at all times (pod affinity) or the opposite (pod anti-affinity).
@@ -159,23 +168,37 @@ execute and monitor the state of the k8s objects such us pods.
 #### Kubelet
 
 We will describe this component in the next section in further details.
-However, I want to clarify something:
 
-I saw many other diagrams on the internet that they didn't include kubelet
-in the control plane node. So you might think that kubelet is only required
-in worker nodes, something that is completely false.
-
-Kubelet is a system daemon or service, in this guide the utility kubeadm
-install it as a systemd service in Linux, this service deals with the container runtime,
-and **many of the k8s components like etcd, the controller manager, the API server are containers NOT OS SERVICES**.
+Kubelet is a system daemon or service, this service deals with the container runtime.
 Thus, kubelet and a container runtime is required and are fundamental pieces in 
-all the k8s cluster nodes.
+ALL the k8s cluster nodes.
 
-Nevertheless, why this component is depicted only in worker nodes by the community? I guess that they
-don't want to make the expectation *that pods can run in control plane nodes*. Yes, by default
-control plain nodes are '*tainted*' and configured to only run system containers not users pods.
-But, we must be know that the configuration can be changed if we want to (it's not recommended
+
+Now, I want to clarify something:
+
+I saw many other diagrams on the internet that didn't include kubelet
+in the control plane node. So you might think that kubelet is only required
+in worker nodes, but that's absolutely wrong...
+
+Why this component is depicted only in worker nodes by the community?
+
+I guess that they
+don't want you to make the expectation *that pods can run in control plane nodes*.
+Statement that it's true by default:
+Control plain nodes are '**tainted**' and configured to only run system containers not users pods.
+
+But, we must know that that's only configuration that can be changed if we want to (Something that's is not recommended
 for production environments).
+
+> [!WARNING]
+> Many of the k8s components like etcd, the controller manager, the API server are CONTAINERS
+> that run on a container runtime. Thus, kubelet is required in every single node,
+> otherwise, the control plane node can't spin those container so please DO NOT CONFUSE THEM WITH OS SERVICES.
+> The only OS service in a k8s cluster is kubelet.
+
+> [!NOTE]
+> In this guide the utility kubeadm
+> will install it as a systemd service in Linux
 
 #### Container runtime (CRI)
 
@@ -218,13 +241,24 @@ Actual runtime environment for the pods containers
 we can change this element for any piece of software that implements the CRI.
 A typical CRI could be containerd.
 
+> [!NOTE]
+> In this guide we will install containerd.
+
 #### Special pods in k8s
 
 Special-purpose Pods, are pods that might be optional but they are
-extensively common in a k8s cluster.
+extensively common in a k8s cluster around the world. Normally, those pods are
+deployed by other projects like ArgoCD, Prometheus, KEDA....
 
-> We must be aware of that we can install additional pods for shaping the k8s
-cluster behaviour or extend their functionality
+> [!TIP] 
+> This is important because we must be aware of this special pods. They will shape the k8s
+cluster behaviour and extend their functionality.
+> One k8s cluster can be completely different from another because of these 'special' pods. You can check this [link](https://www.cncf.io/projects/) to
+> have a glance of the extremely variety of them.
+
+> [!NOTE]
+> In this guide we will use [calico](https://github.com/projectcalico/calico) for making possible
+> the network connectivity between containers in the cluster.
 
 ##### DNS
 
@@ -257,11 +291,14 @@ a new CONTROLLER resource like a **replica set**.
 So as you can see here, the API server is the central unit, everything goes through it.
 
 > Why the Control plane node doesn't handle any work? Good question, it might seems like we're wasting resources, but overloading a worker node is something that can happened with some frequency in a k8s cluster, some overloading
-scenarios end up with the node going down overwhelmed. Therefore, if we
+scenarios end up with the node going down, overwhelmed. Therefore, if we
 configure control plane nodes to be worker nodes as well, we increase the
 possibility of the control plane node to be overloaded which could lead to the node going down. As you can guess
-if the control plane node goes down, everything stop working and the k8s cluster become inoperable. And yes the control node can be replicated, but it's not recommended, for
-production environments, to use control plane nodes as worker nodes too.
+if the control plane node goes down, everything stop working and the k8s cluster become inoperable. That's why it's not recommended, for production environments, to use control plane nodes as worker nodes too.
+
+> [!NOTE]
+> There are other security implications that are out of the scope of this guide. So please, in a prod
+> environment do not configure the control plane node to run worker load.
 
 ## Service operations
 
@@ -319,10 +356,10 @@ As this project is for learning purposes the vault pass is ```1234```
 
 If you want to deploy the cluster using my automation the following requisites are mandatory:
 
-- 2-4 machines shipped with Ubuntu 22.04 and able to communicate with each other
-    - The same username and password are configured for SSH into all the nodes.
+- 2-4 machines shipped with Ubuntu 22.04, cable to communicate with each other
+    - The same username and password are configured for SSH into all the nodes (Yes, I know this is not a good practice, but we're in a lab trying to learn k8s fundamentals...)
     - SSH is configured to accept authentication using username and password
-- Machines should be accessible from the host that is running ansible. Alternatively, 
+- Machines should be accessible from the host that is running the ansible playbook. Alternatively, 
 you can configure a bastion set up, which consist on configure only one machine to be accessible
 from the host that is running ansible, and we use that machine as proxy to connect to the rest of
 them.
@@ -330,10 +367,11 @@ them.
 
 ## Operations
 
-> NOTE: You will need to modify the ansible inventory (```inventory.yaml```) to adjust to your machine
+> [!NOTE]
+> You will need to modify the ansible inventory (```inventory.yaml```) to adjust to your machine
 hostnames.
 
-### On the host, create python 3 virtual environment and install required dependencies
+### On the host, create a python 3 virtual environment and install required dependencies
 
 ```bash
 # vars, change these values according to your computer
@@ -359,7 +397,7 @@ Change the file ```inventory.yaml``` according to your needs.
 According to your needs modify any variable in the files 
 
 - ```group_vars/proxied_servers/vars```
-- ```group_vars/all/vault```: Will require the use of command ansible vaults
+- ```group_vars/all/vault```: Will require the use of the command ```ansible vaults```
 - ```group_vars/all/vars```
 - ```roles/kubernetes/defaults/main.yml```
 
@@ -373,7 +411,7 @@ If you configured the bastion, you'll need to first login into each node of the 
 ssh -C -o ControlMaster=auto -o 'User="k"' -o 'ProxyCommand=ssh -W %h:%p -q <proxy_user>@proxy_host' <target_host>
 ```
 
-Finally check connection
+Finally check network connection with the cluster:
 
 ```bash
 ansible-playbook -i inventory.yaml ping.yaml --ask-vault-pass
@@ -415,6 +453,9 @@ To list all the containers running in a node
 sudo nerdctl -n k8s.io ps
 ```
 
+> [!WARNING]
+> You will need to install this utility
+
 # Useful resources
 
 - [Ansible roles](https://www.youtube.com/watch?v=SvcOwBFLVLM)
@@ -423,8 +464,9 @@ sudo nerdctl -n k8s.io ps
 
 # TODO
 
-Some nice to have features in the k8s cluster:
+Some nice to have features in the guide and automation
 
+- [ ] Automate vm creation on selfhosted target with packer + virtualbox
 - [ ] Add compatibility for arm64 based machines
 - [ ] Configure more than one control plane node
 - [ ] Further explanation for the networking
