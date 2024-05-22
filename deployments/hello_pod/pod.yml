@@ -1,0 +1,11 @@
+# When creating a Manifest the sections `apiVersion`,
+# `Kind`, `metadata` and `spec` are always required.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+

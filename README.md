@@ -41,9 +41,16 @@ representing the system state.
 
 API Objects are a collection of primitives to represent the system state. e.g: pods, nodes...
 
+> [!TIP]
+> API objects are represents the state of our system.
+
 Thanks to this objects we cant configure the state either declaratively (creating a file where we will declare the different
 objects and deploy them afterwards) or imperatively (using cli commands
 directly).
+
+> [!NOTE]
+> The files where we specify declaratively our API Objects (our desired state)
+> are called Manifests
 
 > The API server has a RESTful API that runs over HTTP using JSON, and it's what
 we use as administrators to interact with k8s.
@@ -51,8 +58,11 @@ we use as administrators to interact with k8s.
 > [!NOTE]
 > We don't normally interact with the API ourselves directly. We generally use 
 > CLI or GUI tools for interacting with the cluster. These tools do the ugly work
-> of dealing with the API, and in return they offer a more user-friendly
+> of dealing with the API, and in return they offer a more user-frienly
 > environment to us.
+
+> [!IMPORTANT]
+> API objects are organized by `kind` (Pod, Service, Deployment...), `Group`(core, apps, storage) and `Version` (v1, beta, alpha)
 
 ### Pods
 
@@ -345,12 +355,46 @@ Some links that might help:
 
 - [kubectl cheat sheet](https://k8s-docs.netlify.app/en/docs/reference/kubectl/cheatsheet/)
 
+- `kubectl config get-contexts`: Get all the k8s cluster you've configured in your client
+- `kubectl config use-context <name>`: Select that k8s cluster with `default` namespace. All commands from that moment will run on this chosen cluster.
+- `kubectl cluster-info`: Get information about the selected cluster
+- `kubectl api-resources`: Very useful for writing manifest and understanding all the API objects, you should combine it with `kubectl explain <api-resource-name>`
+
+## Pro tips
+
+### the --dry-run=client flag
+
+This flag is extremely useful:
+
+- But you can combine it with many commands to create API object files populated correctly:
+    - kubectl create deployment ...  --dry-run=client -o yaml > file.yaml
+    - kubectl run pod --dry-run=client -o yaml > file.yaml
+    - ...
+
 # Installation and Configuration
 
 In this section we will deploy a full k8s cluster, I did it with virtual machines
 but if you have the hardware you can do it on real nodes.
 
 As this project is for learning purposes the vault pass is ```1234```
+
+## About Manifests
+
+Manifest are files that can be written in either JSON or YAML. Their use if for declaring
+and API object.
+
+> [!IMPORTANT]
+> At least the following properties MUST appear on a Manifest: `apiVersion`, `Kind`, `metadata` and `spec`
+
+We can use the command:
+
+```bash
+kubectl apply -f <manifes_file>.[yml|json]
+```
+
+To tell the API server we want to apply the manifest changes to the system.
+
+Don't forget about `kubectl create`, and `kubectl diff` and the usage of flag `--dry-run=server` or `--dry-run=client` to generate and validate your objects.
 
 ## Prerequisites
 
