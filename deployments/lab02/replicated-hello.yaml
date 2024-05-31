@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: replicated-hello
+  name: replicated-hello
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: replicated-hello
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: replicated-hello
+    spec:
+      containers:
+      - image: gcr.io/google-samples/hello-app:1.0
+        name: hello-app
+        ports:
+            - containerPort: 8080
+        resources: {}
+status: {}

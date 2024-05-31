@@ -44,6 +44,10 @@ API Objects are a collection of primitives to represent the system state. e.g: p
 > [!TIP]
 > API objects are represents the state of our system.
 
+> [!TIP]
+> You can get all the k8s cluster resources with the command
+> kubectl get all --all-namespaces
+
 Thanks to this objects we cant configure the state either declaratively (creating a file where we will declare the different
 objects and deploy them afterwards) or imperatively (using cli commands
 directly).
@@ -126,6 +130,55 @@ they will make the necessary networking plumbing for connecting everything.
 ### Storage
 
 Objects required when our containers requires a persistent storage.
+
+### Organizing objects in k8s
+
+#### Namespaces
+
+- Subdivide a cluster and its resources
+- Conceptually a "virtual cluster"
+- Deploy objects into a Namespace
+- Resource isolation/organization
+
+They are a security boundary for RBAC (Role-based Access control): We can limit WHO can access WHAT based on namespaces
+
+You can have a resource called X deployed in several namespaces, no conflict name will arise. 
+
+> [!IMPORTANT]
+> Not all objects can be namespaced: Pods, Controllers, services can whereas "Physical things of the cluster" can't PersistentVolumes, Nodes
+
+> [!TIP]
+> kubectl api-resources --namespaced=false
+> will list all api resources that can't be namespaced
+
+##### Default namespaces in a k8s cluster
+
+- **default**: When you deploy resources and you don't specify a namespace, the resources will be deployed in this namespace
+- **kube-public**: Is readable for all users (even those not authenticated) and it's commonly used for shared object between namespaces, for objects like `config-maps`
+- **kube-system**: The system objects: pods like api-server, etcd, controllers, proxy, scheduler....
+
+
+#### Labels
+
+To group certain objects and act on them as a whole.
+
+> [!IMPORTANT]
+> Some resources will need
+> a 'selector' like a label in order to know on which 
+> resource they should act on.
+
+E.g: We can group with a label a bunch of `pods` and make then
+accessible using a `service` which is a resource that will need
+a selector.
+
+
+#### Annotations
+
+For adding a little more of metadata about a particular object or resource
+
+> [!IMPORTANT]
+> They are similar to labels (key/value pairs) but they can't be used
+> to query other resources...
 
 ## k8s Architecture Overview
 
@@ -360,9 +413,9 @@ Some links that might help:
 - `kubectl cluster-info`: Get information about the selected cluster
 - `kubectl api-resources`: Very useful for writing manifest and understanding all the API objects, you should combine it with `kubectl explain <api-resource-name>`
 
-## Pro tips
+### Pro tips
 
-### the --dry-run=client flag
+#### the --dry-run=client flag
 
 This flag is extremely useful:
 
@@ -377,6 +430,16 @@ In this section we will deploy a full k8s cluster, I did it with virtual machine
 but if you have the hardware you can do it on real nodes.
 
 As this project is for learning purposes the vault pass is ```1234```
+
+#### The -v6 or -v7 flag
+
+This flag add a lot of verbosity to your kubectl commands. e.g:
+
+```bash
+kubectl get po -v6
+```
+
+#### The --watch flag is great for monitor a resource
 
 ## About Manifests
 

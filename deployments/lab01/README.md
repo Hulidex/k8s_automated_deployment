@@ -1,4 +1,6 @@
-# Instructions
+# Introduction
+
+Pods and deployments
 
 
 ## Ex 01
