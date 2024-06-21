@@ -1,0 +1,75 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Create 4 VM using VirtualBox Hypervisor
+
+vm_os = "bento/debian-12" 
+vm_arch = "amd64"
+vm_memory = 2048
+vm_cpus = 2
+vm_disk_size = "90GB"
+k8s_master_ip = 10
+worker_nodes = 4
+network_prefix = "192.168.56"
+
+
+# Install vagrant-disksize to allow resizing the vagrant box disk.
+# NOTE:: Vagrant version 2.4.2 has a bug when you try to install any plugin
+# please set the VAGRANT_DISABLE_STRICT_DEPENDENCY_ENFORCEMENT environment
+# variable to "1" before installing the plugin
+unless Vagrant.has_plugin?("vagrant-disksize")
+    raise  Vagrant::Errors::VagrantError.new, "vagrant-disksize plugin is missing. Please install it using 'vagrant plugin install vagrant-disksize' and rerun 'vagrant up'"
+end
+
+unless Vagrant.has_plugin?("vagrant-hostmanager")
+    raise  Vagrant::Errors::VagrantError.new, "vagrant-hostmanager plugin is missing. Please install it using 'vagrant plugin install vagrant-hostmanager' and rerun 'vagrant up'"
+end
+
+
+Vagrant.configure("2") do |config|
+  config.vm.define "kube0" , primary: true do |master|
+    master_ip = "#{network_prefix}.#{k8s_master_ip}"
+
+    master.vm.box = vm_os
+    master.vm.box_architecture = vm_arch
+    master.vm.network "private_network", ip: master_ip
+    master.vm.hostname = "kube0"
+    master.disksize.size = vm_disk_size
+
+    master.vm.provider :virtualbox do |vb|
+      vb.customize ["modifyvm", :id, "--memory", vm_memory]
+      vb.customize ["modifyvm", :id, "--cpus", vm_cpus]
+    end
+
+    master.vm.provision "shell", path: "provision.sh"
+  end
+
+  (1..worker_nodes).each do |i|
+    config.vm.define "kube#{i}" do |worker|
+      worker_ip = "#{network_prefix}.#{k8s_master_ip + i}"
+
+      worker.vm.box = vm_os
+      worker.vm.box_architecture = vm_arch
+      worker.vm.network "private_network", ip: worker_ip
+      worker.vm.hostname = "kube#{i}"
+      worker.disksize.size = vm_disk_size
+
+      worker.vm.provider :virtualbox do |vb|
+        vb.customize ["modifyvm", :id, "--memory", vm_memory]
+        vb.customize ["modifyvm", :id, "--cpus", vm_cpus]
+      end
+
+      worker.vm.provision "shell", path: "provision.sh"
+    end
+  end
+
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.manage_guest = true
+  config.hostmanager.ignore_private_ip = false
+
+  hostnames = [ "kube0" ]
+  hostnames += (1..worker_nodes).map { |i| "kube#{i}" }
+  config.hostmanager.include = hostnames
+
+end

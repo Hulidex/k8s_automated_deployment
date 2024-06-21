@@ -1,0 +1,24 @@
+- name: Reboot
+  block:
+    - name: Reboot
+      when: not (vagrant_mode | default(false))
+      ansible.builtin.reboot:
+        reboot_timeout: 3600
+
+    # TODO: In prerequisites add different variable checks
+    # e.g: check if vagrant_dir is defined and that's it's correct
+    - name: Reboot vagrant
+      when: vagrant_mode | default(false)
+      block:
+        - name: Reboot vagrant
+          become: false
+          connection: local
+          changed_when: true
+          ansible.builtin.command:
+            cmd: "vagrant --no-provision --no-tty reload {{ ansible_hostname }}"
+            chdir: "{{ vagrant_dir }}"
+
+        # - name: Wait for node to be back
+        #   ansible.builtin.wait_for_connection:
+        #     delay: 5
+        #     timeout: 300

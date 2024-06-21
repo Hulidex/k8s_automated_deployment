@@ -12,7 +12,7 @@
       register: last_cmd_log
       notify:
         - Save output to log
-        - Reboot
+        # - Reboot
       ansible.builtin.command:
         cmd: kubeadm reset --force
       changed_when: true
@@ -78,7 +78,7 @@
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent
-      ignore_errors: true
+      failed_when: false
       loop:
         - /etc/cni/net.d
         - ~/.kube/config

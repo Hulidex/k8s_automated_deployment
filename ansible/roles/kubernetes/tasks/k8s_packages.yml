@@ -5,7 +5,7 @@
     - name: Install specific version
       loop: "{{ k8s_packages }}"
       ansible.builtin.apt:
-        name: "{{ item }}={{ k8s_version }}"
+        name: "{{ item }}={{ k8s_full_version }}"
         state: present
 
     # This will prevent the system to update kubeadm when
@@ -28,6 +28,6 @@
     - name: Remove specific version
       loop: "{{ k8s_packages }}"
       ansible.builtin.apt:
-        name: "{{ item }}={{ k8s_version }}"
+        name: "{{ item }}={{ k8s_full_version }}"
         state: absent
         purge: true

@@ -1,0 +1,58 @@
+---
+- name: Create folder for k8s installation files
+  ansible.builtin.file:
+    path: "{{ k8s_install_files_path }}"
+    state: "{{ 'absent' if destroy_mode else 'directory' }}"
+    mode: '0644'
+
+- name: Download and configure flannel
+  when: not destroy_mode
+  block:
+    - name: Download conf
+      ansible.builtin.get_url:
+        url: "{{ flannel_conf_url }}"
+        dest: "{{ k8s_install_files_path }}/flannel_raw.yaml"
+        mode: '0644'
+        force: false
+
+    - name: Copy conf
+      ansible.builtin.copy:
+        src: "{{ k8s_install_files_path }}/flannel_raw.yaml"
+        dest: "{{ k8s_install_files_path }}/flannel.yaml"
+        mode: '0644'
+        remote_src: true
+        force: false
+
+    - name: Set fact flannel ipv4pool
+      ansible.builtin.set_fact:
+        flannel_ipv4pool_cidr: |
+          - name: flannel_IPV4POOL_CIDR
+            value: "{{ k8s_address_range }}"
+
+- name: Replace Network property in net-conf.json
+  ansible.builtin.replace:
+    path: "{{ k8s_install_files_path }}/flannel.yaml"
+    regexp: '"Network":\s*"[^"]+"'
+    replace: '"Network": "{{ k8s_address_range }}"'
+
+- name: Get all running system pods
+  changed_when: false # this command doesn't change the system
+  register: k8s_running_system_pods
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  ansible.builtin.command:
+    cmd: "kubectl -n kube-system get pods --field-selector status.phase=Running -o json"
+
+- name: Check if flannel pods are already deployed
+  ansible.builtin.set_fact:
+    flannel_pods: "{{ k8s_running_system_pods.stdout | from_json | community.general.json_query(flannel_pod_query) }}"
+  vars:
+    flannel_pod_query: "items[*].metadata.name | [?contains(@, 'flannel')]"
+
+- name: Create flannel network pods
+  when: flannel_pods | length == 0
+  changed_when: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  ansible.builtin.command:
+    cmd: "kubectl apply -f '{{ k8s_install_files_path }}/flannel.yaml'"
