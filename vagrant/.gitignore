@@ -1,0 +1,8 @@
+# Ignore Vagrant specific files
+.vagrant/
+
+# Ignore temporary files created by Vagrant during provisioning
+*.log
+
+# Ignore any local configurations
+config.yaml
