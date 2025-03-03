@@ -10,7 +10,6 @@
     cp_tasks: [
       'k8s_prerequisites.yml',
       'containerd.yml',
-      'k8s_apt_repository.yml',
       'k8s_packages.yml',
       "{{ 'k8s_bootstrap_adm.yml' if not destroy_mode else 'k8s_remove_adm.yml' }}",
       'calico.yml',
@@ -28,7 +27,6 @@
     wk_tasks: [
       'k8s_prerequisites.yml',
       'containerd.yml',
-      'k8s_apt_repository.yml',
       'k8s_packages.yml',
       "{{ 'k8s_join_adm.yml' if not destroy_mode else 'k8s_remove_adm.yml' }}"
     ]

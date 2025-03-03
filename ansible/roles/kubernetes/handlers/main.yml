@@ -4,8 +4,9 @@
     file: create_log.yml
 
 - name: Reboot
-  ansible.builtin.reboot:
-    reboot_timeout: 3600
+  when: vagrant_mode | default(false)
+  ansible.builtin.include_tasks:
+    file: reboot_vagrant.yml
 
 - name: Restart containerd service
   ansible.builtin.systemd:

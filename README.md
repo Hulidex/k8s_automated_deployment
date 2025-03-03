@@ -6,8 +6,8 @@ DIY guide for Learning kubernetes (k8s):
 - basic fundamentals
 - Learning by automating all the installation and configuration process with ansible.
 
-I encourage to do it yourself: You should try to install a k8s cluster with 
-containerd, kubeadm and calico using an external tutorial, 
+I encourage to do it yourself: You should try to install a k8s cluster with
+containerd, kubeadm and calico using an external tutorial,
 then try to automate the process
 and use the sources present on this repository as a back up.
 
@@ -31,7 +31,7 @@ that are constantly monitoring the system to make sure that the system is in tha
 desired state and modifying the system if required.
 3. And the magic can occur because of the ```k8s API``` (also know as The API
 Server) which is the glue between everything, we deploy our desired state using
-the API. The different parts of the system communicates with each other 
+the API. The different parts of the system communicates with each other
 using this API as well. **Is the centralized Hub used for communication**.
 
 > k8s API defines a set of object or resources, that are the information units used for
@@ -55,16 +55,16 @@ They are single or a collection of containers **deployed as a single unit**.
 
 - Can be composed for one or more containers
 - Basic unit of work
-- Unit of scheduling 
+- Unit of scheduling
 - Ephemeral - no pod can be 'redeployed', the are either created or destroyed.
 - Atomicity - They are in the cluster or not. If only one container in the pod dies, the pod will be unavailable.
 
-How can k8s knows if a container if OK? Well, easy, monitoring the pod state... 
-But what if the application running in my pod requires a more complex health 
-check, How can I make k8s aware of that custom situation? With 'probes'. We can 
+How can k8s knows if a container if OK? Well, easy, monitoring the pod state...
+But what if the application running in my pod requires a more complex health
+check, How can I make k8s aware of that custom situation? With 'probes'. We can
 configure probes for our pods to check their health.
 
-> by single unit we meant that if we create a pod with multiple containers, all the 
+> by single unit we meant that if we create a pod with multiple containers, all the
 containers will be managed together: creation, deletion...
 
 ### Controllers
@@ -144,7 +144,7 @@ abstractions capable of making the k8s API calls for us.
 #### scheduler
 
 - Tells k8s which nodes to start pods on, monitoring the API server for unscheduled pods.
-- For making the scheduling possible, it will evaluate pod resources in terms of things like CPU 
+- For making the scheduling possible, it will evaluate pod resources in terms of things like CPU
 memory, storage requirements to ensure their availability when placing a Pod
 on a specific node in the k8s cluster.
 - It respect any restriction or constraint defined administratively, things like keeping two pods on the same node at all times (pod affinity) or the opposite (pod anti-affinity).
@@ -152,7 +152,7 @@ on a specific node in the k8s cluster.
 #### Controller manager
 
 - Has the job of implementing the life cycle functions of the controllers that
-execute and monitor the state of the k8s objects such us pods. 
+execute and monitor the state of the k8s objects such us pods.
 - They keep things in the desired state.
 - They watch the API server and update it if required to ensure that its heading towards the desired state.
 
@@ -168,7 +168,7 @@ in worker nodes, something that is completely false.
 Kubelet is a system daemon or service, in this guide the utility kubeadm
 install it as a systemd service in Linux, this service deals with the container runtime,
 and **many of the k8s components like etcd, the controller manager, the API server are containers NOT OS SERVICES**.
-Thus, kubelet and a container runtime is required and are fundamental pieces in 
+Thus, kubelet and a container runtime is required and are fundamental pieces in
 all the k8s cluster nodes.
 
 Nevertheless, why this component is depicted only in worker nodes by the community? I guess that they
@@ -192,7 +192,7 @@ In a nutshell each worker node in a cluster contributes to the compute capacity 
 
 #### Kubelet
 
-- It's responsible for starting containers (hence, pods) in the node, 
+- It's responsible for starting containers (hence, pods) in the node,
 dealing with the container runtime
 - It communicates directly with the API server in the control plane node
 - Monitors API server for changes
@@ -238,7 +238,7 @@ They are advanced HTTP or layer 7 load balancers and content routers.
 
 ##### Dashboard
 
-Pods that provides and interface for web-based administration of a k8s cluster 
+Pods that provides and interface for web-based administration of a k8s cluster
 
 ## Pod Operations
 
@@ -269,7 +269,7 @@ In the previous section we focus on what happen in the cluster from a pod perspe
 
 Imagine we configure a service running on TCP port 80 linked to that replica set
 
-1. User from outside of the cluster will try to connect to the pods using the 
+1. User from outside of the cluster will try to connect to the pods using the
 fixed and persistent service endpoint, so the will try to connect to the TCP port 80.
 2. As the request from the user comes in, into the cluster, they will be load balanced to the all pods linked to the service.
 3. Because we combined this example with a replicaset, if a pod is unavailable for whatever the reason. Is the responsibility of the replicaset controller to maintain the desired state. Therefore, he will remove the pod and deploy a new one
@@ -310,61 +310,119 @@ Some links that might help:
 
 # Installation and Configuration
 
-In this section we will deploy a full k8s cluster, I did it with virtual machines
-but if you have the hardware you can do it on real nodes.
-
-As this project is for learning purposes the vault pass is ```1234```
-
 ## Prerequisites
 
-If you want to deploy the cluster using my automation the following requisites are mandatory:
-
-- 2-4 machines shipped with Ubuntu 22.04 and able to communicate with each other
-    - The same username and password are configured for SSH into all the nodes.
-    - SSH is configured to accept authentication using username and password
-- Machines should be accessible from the host that is running ansible. Alternatively, 
+- A host machine with ansible installed
+- 2-4 machines shipped with a debian based distribution and the ability to communicate with each other
+- Machines should be accessible from the host that is running ansible. Alternatively,
 you can configure a bastion set up, which consist on configure only one machine to be accessible
 from the host that is running ansible, and we use that machine as proxy to connect to the rest of
 them.
-- Python 3 and pip with venv installed on the host machine where ansible will run.
 
-## Operations
+## Overview
 
-> NOTE: You will need to modify the ansible inventory (```inventory.yaml```) to adjust to your machine
-hostnames.
+In this section we will deploy a full k8s cluster, there are many way to achieve
+this goal, in this guide we will be covering 3 scenarios:
 
-### On the host, create python 3 virtual environment and install required dependencies
+- **EASIER WAY**: using vagrant and virtualbox with ansible: You install the
+tooling, follow the steps and that's it, everything is automated
+- **MEDIUM WAY**: using virtual or physical machines with ansible: You install
+ansible configure the inventory file and that's it, everything is automated
+- **HARD WAY**: Configuring a bastion either with a virtual or physical machine for
+improved security and because is fun learning other things.
+
+As this project is for learning purposes the ansible vault pass is ```1234```
+
+### Using Vagrant + VirtualBox
+
+- Install vagrant and virtualbox, it's out of the scope of this guide, it should
+  be easy to find a tutorial on the internet.\
+- Install ansible on your host machine
+
+> [!NOTE]
+> On `shared steps` section you can find an example of installing ansible using
+> a python virtual environment.
+>
+
+Once you have everything installed you will need to performs the following steps:
+
+- cd into the directory `vagrant`
 
 ```bash
-# vars, change these values according to your computer
-$venv_path='./venv'
-$src_path='./src' 
-
-#Create a venv
-python3 -m venv $venv_path
-
-# source the virtual environment
-source $venv_path/bin/activate
-
-# install ansible and all python requirements
-pip install -r $src_path/requirements.txt
+cd vagrant
 ```
 
-### Configure ansible inventory according to your nodes
+- Install the vagrant plugin `vagrant-disksize`:
 
-Change the file ```inventory.yaml``` according to your needs.
+```bash
+vagrant plugin install vagrant-disksize
+```
 
-### Change ansible variables
+> [!WARNING]
+> vagrant version 2.4.2 has a know bug that fails when you install plugins
+> [error reference here](https://github.com/hashicorp/vagrant/issues/13527) if
+> by any change you face this problem set the following environment variable
+> before running the previous command:
+>
+> VAGRANT_DISABLE_STRICT_DEPENDENCY_ENFORCEMENT=1
 
-According to your needs modify any variable in the files 
+- Create the virtual machines: (This will take several minutes)
 
-- ```group_vars/proxied_servers/vars```
-- ```group_vars/all/vault```: Will require the use of command ansible vaults
-- ```group_vars/all/vars```
-- ```roles/kubernetes/defaults/main.yml```
+```bash
+vagrant up
+```
 
-### Test node connectivity from localhost
+> [!NOTE]
+> Please do not be afraid with messing with my Vagrant file, improve it or
+> modify it to your needs if you feels like it
+>
 
+- Once the machines are created, you can save the ssh configuration:
+
+```bash
+vagrant ssh-config >> ~/.ssh/config
+```
+
+That command will persist the ssh configuration for the virtual machines into
+your local config. Hence, you will be able to login to the k8s nodes by just
+typing the hostname,  e.g:
+
+```bash
+ssh kube0 # For login into the k8s control plane node
+ssh kube1 # for login in the worker node 1
+# ...
+```
+
+- Finally you can jump to section [Shared steps](#shared-steps) to continue with
+  the process. Just don't forget to use the inventory file:
+`inventory_vagrant.yaml`
+
+> [!NOTE]
+> If you want to shutdown the virtual machines just run the command
+> `vagrant halt`
+
+> [!IMPORTANT]
+> If you want to destroy the virtual machines just run the command
+> `vagrant destroy -f`
+
+### Using your real machines or virtual machines configured by you with a different hypervisor
+
+- Configure the machines according to your needs, including network
+connectivity.
+- Install ansible on your host machine
+- Configure an inventory based on your machines hostnames/ip, you can use the
+inventory file `inventory_vagrant.yaml` as reference
+
+> [!NOTE]
+> On `shared steps` section you can find an example of installing ansible using
+> a python virtual environment.
+>
+
+### BONUS: Using a bastion
+
+<!-- TODO: Finish this section -->
+
+<!--
 If you configured the bastion, you'll need to first login into each node of the cluster:
 
 ```bash
@@ -374,6 +432,40 @@ ssh -C -o ControlMaster=auto -o 'User="k"' -o 'ProxyCommand=ssh -W %h:%p -q <pro
 ```
 
 Finally check connection
+-->
+
+### Shared steps
+
+### On the host, create a  python 3 virtual environment and install required dependencies
+
+```bash
+# vars, change these values according to your computer
+venv_path='./venv'
+src_path='./src' 
+
+#Create a venv
+python3 -m venv $venv_path
+
+# source the virtual environment
+source $venv_path/bin/activate
+
+# install ansible
+pip install ansible
+```
+
+### Change ansible variables
+
+According to your needs modify any variable in the files
+
+- ```group_vars/proxied_servers/vars```
+- ```group_vars/all/vault```: Will require the use of command ansible vaults
+- ```group_vars/all/vars```
+- ```roles/kubernetes/defaults/main.yml```
+
+### Test node connectivity from localhost
+
+This playbook will test the connectivity between the host machine and the nodes,
+just to make sure that your inventory is correctly setup
 
 ```bash
 ansible-playbook -i inventory.yaml ping.yaml --ask-vault-pass

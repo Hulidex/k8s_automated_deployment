@@ -28,15 +28,26 @@
         line: "{{ item.line }}"
       loop:
         - { regex: '^(\s*advertiseAddress\s*:)', line: '\1 {{ control_node_ip_address }}' }
-        - { regex: '^(\s*kubernetesVersion\s*:)', line: "\\1 {{ k8s_version | regex_replace('^(\\d\\.\\d+\\.\\d+).*', '\\1') }}" }
+        - { regex: '^(\s*kubernetesVersion\s*:)', line: "\\1 {{ k8s_full_version | regex_replace('^(\\d\\.\\d+\\.\\d+).*', '\\1') }}" }
+
+    - name: Add podSubnet to the config
+      ansible.builtin.blockinfile:
+        path: "{{ k8s_install_files_path }}/cluster_config.yaml"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK networking config -->"
+        insertafter: "^networking:"
+        block: |
+          {% filter indent(width=2, first=true) %}
+          podSubnet: "{{ k8s_address_range }}"
+          {% endfilter %}
 
     - name: Add KubeletConfiguration yaml object
       ansible.builtin.blockinfile:
         path: "{{ k8s_install_files_path }}/cluster_config.yaml"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK kubelet config -->"
         block: |
           ---
-          apiVersion: kubeadm.k8s.io/v1beta3
-          kind: KubeletCofiguration
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          kind: KubeletConfiguration
           cgroupDriver: systemd
 
 - name: Get kubelet status
@@ -48,7 +59,7 @@
   register: last_cmd_log
   notify:
     - Save output to log
-    - Reboot
+    # - Reboot
   changed_when: true
   when:
     - kubelet_service.status.SubState != 'running'

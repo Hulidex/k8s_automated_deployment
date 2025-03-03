@@ -1,0 +1,22 @@
+all:
+  children:
+    control_nodes:
+      children:
+        # ONLY ONE NODE IS ALLOWED HERE AND IT'S MANDATORY
+        # This node represent the fist control plane that will
+        # be configured the rest of them will be configured
+        # based on this one
+        control_main_node:
+          hosts:
+            kube0:
+      hosts:
+
+    worker_nodes:
+      hosts:
+        kube1:
+        kube2:
+        kube3:
+        kube4:
+  vars:
+    # I assume that all nodes have the same user configured
+    ansible_user: "{{ host_user_name }}"
